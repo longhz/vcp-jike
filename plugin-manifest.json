@@ -1,0 +1,123 @@
+{
+  "manifestVersion": "1.0.0",
+  "name": "JikeScraper",
+  "version": "1.1.0",
+  "displayName": "即刻内容获取器",
+  "description": "抓取即刻帖子、评论、用户资料，支持搜索和互动。支持昵称自动解析、自动翻页、楼中楼评论。登录态通过 tokens.json 文件维护。",
+  "author": "Hermes-VCP",
+  "pluginType": "synchronous",
+  "entryPoint": {
+    "type": "nodejs",
+    "command": "node JikePlugin.js"
+  },
+  "communication": {
+    "protocol": "stdio",
+    "timeout": 60000
+  },
+  "configSchema": {
+    "JikeTokensPath": {
+      "type": "string",
+      "description": "tokens.json 文件路径（存放登录态，默认保存在插件目录下）",
+      "default": "/u01/VCPToolBox/Plugin/JikeScraper/tokens.json"
+    },
+    "JikeApiBase": {
+      "type": "string",
+      "description": "即刻 API 基础地址",
+      "default": "https://api.ruguoapp.com"
+    },
+    "JikeWebOrigin": {
+      "type": "string",
+      "description": "Web 端 Origin",
+      "default": "https://web.okjike.com"
+    },
+    "JikeDefaultCount": {
+      "type": "integer",
+      "description": "默认返回条数上限",
+      "default": 25
+    },
+    "JikeProxyUrl": {
+      "type": "string",
+      "description": "HTTP 代理地址（可选，用于海外访问）"
+    }
+  },
+  "dependencies": {
+    "npm": ["axios"],
+    "system": []
+  },
+  "capabilities": {
+    "invocationCommands": [
+      {
+        "commandIdentifier": "JikeSearch",
+        "description": "在即刻搜索帖子、用户、圈子（支持类型过滤）。\n参数:\n- keyword (字符串, 必需): 搜索关键词\n- count (整数, 可选): 结果数量，默认25\n- search_type (字符串, 可选): 过滤类型 user/post/topic，默认ALL\n调用格式:\ntool_name: JikeScraper\naction: search\nkeyword: AI探索站\nsearch_type: post"
+      },
+      {
+        "commandIdentifier": "JikeUserPosts",
+        "description": "获取指定用户的帖子（支持昵称自动解析+自动翻页）。\n参数:\n- username (字符串, 必需): 用户UUID / 昵称 / 主页URL\n- count (整数, 可选): 单页数量，默认25\n- max_posts (整数, 可选): 自动翻页模式，设置最大帖子数。超限返回翻页key\n- load_more_key (字符串, 可选): 翻页标识\n调用格式:\ntool_name: JikeScraper\naction: get_user_posts\nusername: Alchian花生\nmax_posts: 30"
+      },
+      {
+        "commandIdentifier": "JikeFollowFeeds",
+        "description": "获取关注动态（自己关注的人的更新）。\n参数:\n- load_more_key (字符串, 可选): 翻页key\n调用格式:\ntool_name: JikeScraper\naction: get_following_feeds"
+      },
+      {
+        "commandIdentifier": "JikeRecommendFeeds",
+        "description": "获取即刻推荐/发现动态。\n参数:\n- load_more_key (字符串, 可选): 翻页key\n调用格式:\ntool_name: JikeScraper\naction: get_recommend_feeds"
+      },
+      {
+        "commandIdentifier": "JikeTopicFeed",
+        "description": "获取指定圈子的动态。\n参数:\n- topic_id (字符串, 必需): 圈子ID，从搜索结果获取\n- load_more_key (字符串, 可选): 翻页key\n调用格式:\ntool_name: JikeScraper\naction: get_topic_feed\ntopic_id: 59bdc5d8e569780011a4d791"
+      },
+      {
+        "commandIdentifier": "JikePostDetail",
+        "description": "获取单条帖子详情。\n参数:\n- post_id (字符串, 必需): 帖子ID\n调用格式:\ntool_name: JikeScraper\naction: get_post_detail\npost_id: 69dfaaae50ac251af897b372"
+      },
+      {
+        "commandIdentifier": "JikePostWithComments",
+        "description": "获取帖子详情+全部评论（自动翻页，推荐使用）。\n参数:\n- post_id (字符串, 必需): 帖子ID\n- post_type (字符串, 可选): ORIGINAL_POST或REPOST，默认ORIGINAL_POST\n- max_comments (整数, 可选): 最大评论数，默认150。超限返回翻页key和提示\n- load_more_key (字符串, 可选): 翻页标识，用于获取剩余评论\n- include_replies (字符串, 可选): 设为true获取楼中楼子回复（每条最多5条）\n调用格式:\ntool_name: JikeScraper\naction: get_post_with_comments\npost_id: 69dfaaae50ac251af897b372\ninclude_replies: true"
+      },
+      {
+        "commandIdentifier": "JikeComments",
+        "description": "获取帖子的评论列表（单页，需手动翻页时使用）。\n参数:\n- post_id (字符串, 必需): 帖子ID\n- target_type (字符串, 可选): ORIGINAL_POST或REPOST\n- load_more_key (字符串, 可选): 翻页标识\n调用格式:\ntool_name: JikeScraper\naction: get_comments\npost_id: 69dfaaae50ac251af897b372"
+      },
+      {
+        "commandIdentifier": "JikeUserProfile",
+        "description": "获取用户资料（支持昵称自动解析，含粉丝/关注/获赞数）。\n参数:\n- username (字符串, 必需): 用户UUID / 昵称 / 主页URL\n调用格式:\ntool_name: JikeScraper\naction: get_user_profile\nusername: Alchian花生"
+      },
+      {
+        "commandIdentifier": "JikeCreatePost",
+        "description": "在即刻发布动态。\n参数:\n- content (字符串, 必需): 帖子内容\n- topic_id (字符串, 可选): 发到指定圈子\n调用格式:\ntool_name: JikeScraper\naction: create_post\ncontent: 这是我的动态"
+      },
+      {
+        "commandIdentifier": "JikeAddComment",
+        "description": "给帖子评论。\n参数:\n- post_id (字符串, 必需): 帖子ID\n- content (字符串, 必需): 评论内容\n- target_type (字符串, 可选): 目标类型，默认 ORIGINAL_POST\n调用格式:\ntool_name: JikeScraper\naction: add_comment\npost_id: 69dfaaae50ac251af897b372\ncontent: 写得真好"
+      },
+      {
+        "commandIdentifier": "JikeLike",
+        "description": "给帖子点赞。\n参数:\n- post_id (字符串, 必需): 帖子ID\n调用格式:\ntool_name: JikeScraper\naction: like_post\npost_id: 69dfaaae50ac251af897b372"
+      },
+      {
+        "commandIdentifier": "JikeFollow",
+        "description": "关注用户（支持昵称自动解析）。\n参数:\n- username (字符串, 必需): 用户UUID / 昵称 / 主页URL\n调用格式:\ntool_name: JikeScraper\naction: follow_user\nusername: Alchian花生"
+      },
+      {
+        "commandIdentifier": "JikeUnfollow",
+        "description": "取消关注用户（支持昵称自动解析）。\n参数:\n- username (字符串, 必需): 用户UUID / 昵称 / 主页URL\n调用格式:\ntool_name: JikeScraper\naction: unfollow_user\nusername: Alchian花生"
+      },
+      {
+        "commandIdentifier": "JikeUnlike",
+        "description": "取消帖子点赞。\n参数:\n- post_id (字符串, 必需): 帖子 ID\n调用格式:\ntool_name: JikeScraper\naction: unlike_post\npost_id: 69dfaaae50ac251af897b372"
+      },
+      {
+        "commandIdentifier": "JikeLoginStatus",
+        "description": "检查当前登录状态。\n无参数。\n调用格式:\ntool_name: JikeScraper\naction: check_login_status"
+      },
+      {
+        "commandIdentifier": "JikeMyTopics",
+        "description": "获取用户已加入的全部圈子（自动翻页最多120页），结果持久化到 data/ 目录。\n无参数。\n调用格式:\ntool_name: JikeScraper\naction: get_my_topics\n\n返回: { total, byType, topInterests, fetchedAt, savedTo }"
+      },
+      {
+        "commandIdentifier": "JikeReadMyTopics",
+        "description": "读取已保存的圈子数据。\n参数:\n- type (字符串, 可选): 'full' 或 'summary'，默认 full\n调用格式:\ntool_name: JikeScraper\naction: read_my_topics\ntype: summary"
+      }
+    ]
+  }
+}

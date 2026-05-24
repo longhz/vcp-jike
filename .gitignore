@@ -1,0 +1,7 @@
+tokens.json
+qrcode.png
+data/
+*.log
+*.tmp
+.env
+node_modules/
