@@ -140,8 +140,9 @@ function compactSourceSummary(sources) {
     const type = s.type === 'recommend' ? 'recommend' : 'search';
     byType.set(type, (byType.get(type) || 0) + s.count);
 
-    if (s.keyword) {
-      byKeyword.set(s.keyword, (byKeyword.get(s.keyword) || 0) + s.count);
+    const keyword = s.keyword || (typeof s.type === 'string' && s.type.startsWith('search:') ? s.type.slice('search:'.length) : '');
+    if (keyword) {
+      byKeyword.set(keyword, (byKeyword.get(keyword) || 0) + s.count);
     }
   }
 
